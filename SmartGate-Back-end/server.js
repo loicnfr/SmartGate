@@ -51,6 +51,8 @@ const attendanceSchema = new mongoose.Schema({
 
 const User = mongoose.model('User', userSchema);
 const Attendance = mongoose.model('Attendance', attendanceSchema);
+const crypto = require('crypto');
+const { error } = require('console');
 
 const authenticateToken = (req, res, next) => {
   const authHeader = req.headers['authorization'];
@@ -70,8 +72,28 @@ const authenticateToken = (req, res, next) => {
 
 const upload = multer({ storage: multer.memoryStorage() });
 
+// Add staff logic
 
-// register
+app.post('/api/users/addstaff', async (req, res) => {
+  const {name, email, password, department, position} = req.body;
+
+  try {
+    const password = crypto.randomBytes(4).toString('hex');
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const user = new User({ name, email, password: hashedPassword, role: 'staff'});
+    await user.save();
+
+    res.status(201).json({
+      message: 'Staff member added successfully',
+      credentials: {email, password}
+    });
+  } catch (e) {
+    res.status(400).json({ e : error.message });
+  }
+});
+
+//  ******END staff logic
 
 
 app.post('/api/auth/login', async (req, res) => {

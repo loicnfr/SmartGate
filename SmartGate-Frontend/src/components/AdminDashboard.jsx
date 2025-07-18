@@ -16,9 +16,11 @@ import axios from "axios";
 
 const AdminDashboard = () => {
   const { user, logout } = useAuth();
-  const [staff, setStaff] = useState([]);
+  // const [staff, setStaff] = useState([]);
+  const [staff, setStaff] = useState({name: '', email: ''});
   const [attendanceData, setAttendanceData] = useState([]);
   const [loading, setLoading] = useState(true);
+  // const [credentials, setCredentials] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedDate, setSelectedDate] = useState(
     new Date().toISOString().split("T")[0]
@@ -28,6 +30,17 @@ const AdminDashboard = () => {
   useEffect(() => {
     fetchDashboardData();
   }, []);
+
+  // handle of added staff
+
+  // const handleAddStaff = async (e) => {
+  //     e.preventDefault();
+  //     const res = await axios.post('/api/users/addstaff', staff);
+  //     setCredentials(res.data.credentials);
+  //     setStaff({name: '', email: '' });
+  // };
+
+  // ********handle submit ends
 
   const fetchDashboardData = async () => {
     try {
@@ -391,16 +404,19 @@ const AddStaffModal = ({ onClose }) => (
       <div className="space-y-4">
         <input
           type="text"
+          value={name}
           placeholder="Full Name"
           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
         <input
           type="email"
+          value={email}
           placeholder="Email Address"
           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
         <input
           type="text"
+          value={department}
           placeholder="Department"
           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
@@ -417,9 +433,13 @@ const AddStaffModal = ({ onClose }) => (
         >
           Cancel
         </button>
+
+
+{/* add button */}
         <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
           Add Staff
         </button>
+
       </div>
     </div>
   </div>
