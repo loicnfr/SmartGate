@@ -1,26 +1,18 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import axios from 'axios';
-import { useLocalStorage } from '../src/hooks/useLocalStorage';
+import React, { createContext, useContext, useState, useEffect } from "react";
+import axios from "axios";
+import { useLocalStorage } from "../src/hooks/useLocalStorage";
 
 // (undefined)
 const AuthContext = createContext();
 
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
-};
-
-const API_BASE_URL = 'http://localhost:3001/api';
+const API_BASE_URL = "http://localhost:3001/api";
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useLocalStorage('user', null);
+  const [user, setUser] = useLocalStorage("user", null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem("token");
     if (token) {
       validateToken(token);
     } else {
@@ -35,7 +27,7 @@ export const AuthProvider = ({ children }) => {
       });
       setUser(response.data.user);
     } catch (error) {
-      localStorage.removeItem('token');
+      localStorage.removeItem("token");
     } finally {
       setLoading(false);
     }
@@ -49,13 +41,13 @@ export const AuthProvider = ({ children }) => {
       });
 
       if (response.data.success) {
-        localStorage.setItem('token', response.data.token);
+        localStorage.setItem("token", response.data.token);
         setUser(response.data.user);
         return true;
       }
       return false;
     } catch (error) {
-      console.error('Login error:', error);
+      console.error("Login error:", error);
       return false;
     }
   };
@@ -69,20 +61,20 @@ export const AuthProvider = ({ children }) => {
       if (response.data.success && response.data.user) {
         const token = response.data.token;
         if (token) {
-          localStorage.setItem('token', token);
+          localStorage.setItem("token", token);
         }
         setUser(response.data.user);
         return response.data.user;
       }
       return null;
     } catch (error) {
-      console.error('Face recognition error:', error);
+      console.error("Face recognition error:", error);
       return null;
     }
   };
 
   const logout = () => {
-    localStorage.removeItem('token');
+    localStorage.removeItem("token");
     setUser(null);
   };
 
@@ -95,4 +87,12 @@ export const AuthProvider = ({ children }) => {
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+};
+
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error("useAuth must be used within an AuthProvider");
+  }
+  return context;
 };

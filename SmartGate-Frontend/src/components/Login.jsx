@@ -1,49 +1,24 @@
-import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import React, { useState } from "react";
+import { Link } from "react-router-dom";
 // import { useAuth } from '../../contexts/AuthContext';
-import { Mail, Lock, ArrowLeft, Loader2 } from 'lucide-react';
-import { useAuthServices } from '../services/auth.services';
+import { Mail, Lock, ArrowLeft, Loader2 } from "lucide-react";
+import { useAuth } from "../../contexts/AuthContext";
 // import axios from 'axios';
 
 const Login = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
-  const { login } = useAuthServices();
-  const navigate = useNavigate();
+  const [error, setError] = useState("");
 
-  const handleSubmit =  (e) => {
+  const { login } = useAuth();
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
-   
-    setError('');
-   
-    console.log('login')
-    login(email, password).then(res => {
-        console.log("Login result:", res);
-
-          if (!res.data.token) {
-          setError("Login failed. Invalid server response.");
-          return;
-            }
-      localStorage.setItem('user', JSON.stringify(res));
-      navigate('/dashboard');
-
-   console.log(res)
-    }).catch(err => {
-   console.log(err)
-        setError('Invalid email or password');
-
-    }).finally(() => {
-      setIsLoading(false)
-    })
-
-     };
-
-
-
- 
+    setError("");
+    await login(email, password);
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-900 via-blue-800 to-indigo-900 flex items-center justify-center p-4">
@@ -58,8 +33,12 @@ const Login = () => {
               Back to Face Recognition
             </Link>
 
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">Manual Login</h1>
-            <p className="text-gray-600">Enter your credentials to access the system</p>
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">
+              Manual Login
+            </h1>
+            <p className="text-gray-600">
+              Enter your credentials to access the system
+            </p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
@@ -70,7 +49,10 @@ const Login = () => {
             )}
 
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+              <label
+                htmlFor="email"
+                className="block text-sm font-medium text-gray-700 mb-2"
+              >
                 Email Address
               </label>
               <div className="relative">
@@ -88,7 +70,10 @@ const Login = () => {
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+              <label
+                htmlFor="password"
+                className="block text-sm font-medium text-gray-700 mb-2"
+              >
                 Password
               </label>
               <div className="relative">
@@ -116,7 +101,7 @@ const Login = () => {
                   Signing in...
                 </>
               ) : (
-                'Sign In'
+                "Sign In"
               )}
             </button>
           </form>
