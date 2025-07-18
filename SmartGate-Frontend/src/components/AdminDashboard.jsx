@@ -40,29 +40,33 @@ const AdminDashboard = () => {
         }),
       ]);
 
-      setStaff(staffResponse.data);
-      setAttendanceData(attendanceResponse.data);
+      setStaff(Array.isArray(staffResponse.data) ? staffResponse.data : []);
+      setAttendanceData(Array.isArray(attendanceResponse.data) ? attendanceResponse.data : []);
     } catch (error) {
       console.error("Error fetching dashboard data:", error);
+      setStaff([]);
+      setAttendanceData([]);
     } finally {
       setLoading(false);
     }
   };
 
-  console.log("Console.log: ", staff);
+  const filteredStaff = Array.isArray(staff)
+    ? staff.filter(
+        (member) =>
+          member.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          member.email?.toLowerCase().includes(searchTerm.toLowerCase())
+      )
+    : [];
 
-  const filteredStaff = staff?.filter(
-    (member) =>
-      member.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      member.email.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  const todayAttendance = attendanceData.filter((a) => a.date === selectedDate);
+  const todayAttendance = Array.isArray(attendanceData)
+    ? attendanceData.filter((a) => a.date === selectedDate)
+    : [];
 
   const presentToday = todayAttendance.filter(
     (a) => a.status === "present"
   ).length;
-  const totalStaff = staff.length;
+  const totalStaff = filteredStaff.length;
 
   const formatTime = (dateString) => {
     return new Date(dateString).toLocaleTimeString("en-US", {
@@ -129,19 +133,16 @@ const AdminDashboard = () => {
       {/* DASHBOARD STATS */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          {/* Total Staff */}
           <DashboardCard
             icon={<Users className="h-8 w-8 text-blue-600" />}
             title="Total Staff"
             value={totalStaff}
           />
-          {/* Present Today */}
           <DashboardCard
             icon={<TrendingUp className="h-8 w-8 text-green-600" />}
             title="Present Today"
             value={presentToday}
           />
-          {/* Attendance Rate */}
           <DashboardCard
             icon={<Calendar className="h-8 w-8 text-purple-600" />}
             title="Attendance Rate"
@@ -149,7 +150,6 @@ const AdminDashboard = () => {
               totalStaff > 0 ? Math.round((presentToday / totalStaff) * 100) : 0
             }%`}
           />
-          {/* Absent Today */}
           <DashboardCard
             icon={<UserPlus className="h-8 w-8 text-orange-600" />}
             title="Absent Today"
@@ -159,7 +159,6 @@ const AdminDashboard = () => {
 
         {/* STAFF MANAGEMENT & ATTENDANCE REPORT */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-          {/* Staff Management */}
           <StaffManagement
             filteredStaff={filteredStaff}
             searchTerm={searchTerm}
@@ -167,8 +166,6 @@ const AdminDashboard = () => {
             showAddStaff={showAddStaff}
             setShowAddStaff={setShowAddStaff}
           />
-
-          {/* Attendance Reports */}
           <AttendanceReport
             todayAttendance={todayAttendance}
             selectedDate={selectedDate}
@@ -178,13 +175,11 @@ const AdminDashboard = () => {
           />
         </div>
 
-        {/* RECENT ACTIVITY TABLE */}
         <RecentActivityTable
           attendanceData={attendanceData}
           formatTime={formatTime}
         />
 
-        {/* ADD STAFF MODAL */}
         {showAddStaff && (
           <AddStaffModal onClose={() => setShowAddStaff(false)} />
         )}
@@ -193,7 +188,6 @@ const AdminDashboard = () => {
   );
 };
 
-// Reusable UI Components
 const DashboardCard = ({ icon, title, value }) => (
   <div className="bg-white rounded-xl shadow-sm p-6">
     <div className="flex items-center">
@@ -268,9 +262,7 @@ const AttendanceReport = ({
 }) => (
   <div className="bg-white rounded-xl shadow-sm p-6">
     <div className="flex justify-between items-center mb-4">
-      <h3 className="text-lg font-semibold text-gray-900">
-        Attendance Reports
-      </h3>
+      <h3 className="text-lg font-semibold text-gray-900">Attendance Reports</h3>
       <button
         onClick={exportAttendance}
         className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center"

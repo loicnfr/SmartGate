@@ -19,6 +19,7 @@ export const AuthProvider = ({ children }) => {
       setLoading(false);
     }
   }, []);
+  
 
   const validateToken = async (token) => {
     try {
