@@ -27,20 +27,15 @@ const AdminDashboard = () => {
   );
   const [showAddStaff, setShowAddStaff] = useState(false);
 
+
+
   useEffect(() => {
     fetchDashboardData();
   }, []);
 
-  // handle of added staff
 
-  // const handleAddStaff = async (e) => {
-  //     e.preventDefault();
-  //     const res = await axios.post('/api/users/addstaff', staff);
-  //     setCredentials(res.data.credentials);
-  //     setStaff({name: '', email: '' });
-  // };
 
-  // ********handle submit ends
+
 
   const fetchDashboardData = async () => {
     try {
@@ -115,6 +110,8 @@ const AdminDashboard = () => {
       </div>
     );
   }
+
+
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -196,6 +193,7 @@ const AdminDashboard = () => {
         {showAddStaff && (
           <AddStaffModal onClose={() => setShowAddStaff(false)} />
         )}
+
       </div>
     </div>
   );
@@ -397,52 +395,132 @@ const RecentActivityTable = ({ attendanceData, formatTime }) => (
   </div>
 );
 
-const AddStaffModal = ({ onClose }) => (
-  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-    <div className="bg-white rounded-xl p-6 w-96">
-      <h3 className="text-lg font-semibold mb-4">Add New Staff Member</h3>
-      <div className="space-y-4">
-        <input
-          type="text"
-          value={name}
-          placeholder="Full Name"
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
-        <input
-          type="email"
-          value={email}
-          placeholder="Email Address"
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
-        <input
-          type="text"
-          value={department}
-          placeholder="Department"
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
-        <input
-          type="text"
-          placeholder="Position"
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
-      </div>
-      <div className="flex justify-end space-x-2 mt-6">
-        <button
-          onClick={onClose}
-          className="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50"
-        >
-          Cancel
-        </button>
+const AddStaffModal = ({ onClose }) => {
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState("");
+  const [credentials, setCredentials] = useState(null);
+  const [form, setForm] = useState({
+    name: "",
+    email: "",
+    department: "",
+    position: "",
+  });
 
+  // Updates form state on input change
+  const handleChange = (e) => {
+    // Use 'name' attribute to map to form keys instead of placeholder
+    setForm({ ...form, [e.target.name]: e.target.value });
+  };
 
-{/* add button */}
-        <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-          Add Staff
-        </button>
+  // Sends form data to backend
+  const handleSubmit = async () => {
+    setLoading(true);
+    setMessage("");
+    try {
+      const token = localStorage.getItem("token"); // Or pass as a prop
 
+      const res = await axios.post(
+        "/api/users/staff",
+        form,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (res.data.success) {
+        setMessage("Staff added successfully!");
+        setCredentials(res.data.credentials); // Make sure backend returns credentials
+        setForm({ name: "", email: "", department: "", position: "" });
+      } else {
+        setMessage(res.data.message || "Failed to add staff.");
+      }
+    } catch (error) {
+      setMessage(error.response?.data?.message || "Server error.");
+    }
+    setLoading(false);
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white rounded-xl p-6 w-96">
+        <h3 className="text-lg font-semibold mb-4">Add New Staff Member</h3>
+
+        <div className="space-y-4">
+          <input
+            type="text"
+            name="name"
+            placeholder="Full Name"
+            value={form.name}
+            onChange={handleChange}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+
+          <input
+            type="email"
+            name="email"
+            placeholder="Email Address"
+            value={form.email}
+            onChange={handleChange}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+
+          <input
+            type="text"
+            name="department"
+            placeholder="Department"
+            value={form.department}
+            onChange={handleChange}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+
+          <input
+            type="text"
+            name="position"
+            placeholder="Position"
+            value={form.position}
+            onChange={handleChange}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+
+        {message && (
+          <p className={`mt-4 text-sm ${res?.data?.success ? "text-green-600" : "text-red-600"}`}>
+            {message}
+          </p>
+        )}
+
+        {credentials && (
+          <div className="mt-4 p-2 bg-gray-100 rounded">
+            <strong>Assigned Credentials:</strong>
+            <pre className="text-sm">{JSON.stringify(credentials, null, 2)}</pre>
+          </div>
+        )}
+
+        <div className="flex justify-end space-x-2 mt-6">
+          <button
+            onClick={onClose}
+            className="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50"
+            disabled={loading}
+          >
+            Cancel
+          </button>
+
+          <button
+            onClick={handleSubmit}
+            disabled={loading}
+            className={`px-4 py-2 text-white rounded-lg ${
+              loading ? "bg-blue-300" : "bg-blue-600 hover:bg-blue-700"
+            }`}
+          >
+            {loading ? "Adding..." : "Add Staff"}
+          </button>
+        </div>
       </div>
     </div>
-  </div>
-);
+  );
+}
 
 export default AdminDashboard;

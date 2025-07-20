@@ -72,29 +72,6 @@ const authenticateToken = (req, res, next) => {
 
 const upload = multer({ storage: multer.memoryStorage() });
 
-// Add staff logic
-
-app.post('/api/users/addstaff', async (req, res) => {
-  const {name, email, password, department, position} = req.body;
-
-  try {
-    const password = crypto.randomBytes(4).toString('hex');
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    const user = new User({ name, email, password: hashedPassword, role: 'staff'});
-    await user.save();
-
-    res.status(201).json({
-      message: 'Staff member added successfully',
-      credentials: {email, password}
-    });
-  } catch (e) {
-    res.status(400).json({ e : error.message });
-  }
-});
-
-//  ******END staff logic
-
 
 app.post('/api/auth/login', async (req, res) => {
   try {
@@ -262,12 +239,15 @@ app.post('/api/users/staff', authenticateToken, async (req, res) => {
 
     const { name, email, department, position, password } = req.body;
 
+    // Check if user already exists
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return res.status(400).json({ success: false, message: 'User already exists' });
     }
 
-    const hashedPassword = await bcrypt.hash(password || 'defaultPassword123', 10);
+    // Generate random password
+    const generatedPassword = crypto.randomBytes(4).toString('hex');
+    const hashedPassword = await bcrypt.hash(generatedPassword, 10);
 
     const user = new User({
       name,
@@ -280,8 +260,13 @@ app.post('/api/users/staff', authenticateToken, async (req, res) => {
 
     await user.save();
 
-    res.json({
+     res.status(201).json({
       success: true,
+      message: 'Staff registered successfully',
+      credentials: {
+        email,
+        password: generatedPassword
+      },
       user: {
         id: user._id,
         name: user.name,
