@@ -63,10 +63,14 @@ def get_face_encoding(image):
         return None
 
 
+#     ************* All APIs start****************
 
-@app.route('/recognize', methods=['POST'])
+
+@app.route('/recognize', methods=['GET', 'POST'])
 def recognize_face():
-    """Recognize a face from base64 image"""
+    if request.method == 'GET':
+        return jsonify({'message': 'Send a POST request with {"image": "<base64>"} to recognize a face.'})
+    # POST logic below
     try:
         data = request.get_json()
         image_base64 = data.get('image')
@@ -111,9 +115,12 @@ def recognize_face():
         print(f"Recognition error: {e}")
         return jsonify({'success': False, 'message': f'Recognition failed: {str(e)}'})
 
-@app.route('/encode', methods=['POST'])
+
+@app.route('/encode', methods=['GET', 'POST'])
 def encode_face():
-    """Encode a face and store it for a user"""
+    if request.method == 'GET':
+        return jsonify({'message': 'Send a POST request with {"image": "<base64>", "userId": "<id>"} to encode a face.'})
+    # POST logic below
     try:
         data = request.get_json()
         image_base64 = data.get('image')
@@ -158,9 +165,12 @@ def encode_face():
         print(f"Encoding error: {e}")
         return jsonify({'success': False, 'message': f'Encoding failed: {str(e)}'})
 
-@app.route('/load_encodings', methods=['POST'])
+
+@app.route('/load_encodings', methods=['GET', 'POST'])
 def load_encodings_from_db():
-    """Load all face encodings from database"""
+    if request.method == 'GET':
+        return jsonify({'message': 'Send a POST request to load all face encodings from database.'})
+    # POST logic below
     try:
         users = db.users.find({'faceEncoding': {'$exists': True, '$ne': None}})
 
@@ -190,23 +200,8 @@ def load_encodings_from_db():
         print(f"Load encodings error: {e}")
         return jsonify({'success': False, 'message': f'Failed to load encodings: {str(e)}'})
 
-@app.route('/health', methods=['GET'])
-def health_check():
-    """Health check endpoint"""
-    return jsonify({'status': 'healthy', 'service': 'facial-recognition'})
-
-@app.route('/stats', methods=['GET'])
-def get_stats():
-    """Get statistics about stored encodings"""
-    try:
-        known_data = load_known_encodings()
-        return jsonify({
-            'success': True,
-            'total_encodings': len(known_data['encodings']),
-            'users_with_encodings': len(known_data['user_ids'])
-        })
-    except Exception as e:
-        return jsonify({'success': False, 'message': str(e)})
+    
+    # All APIs end
 
 if __name__ == '__main__':
     print("Starting Facial Recognition Service...")

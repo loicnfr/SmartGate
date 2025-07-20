@@ -36,6 +36,7 @@ const AdminDashboard = () => {
 
 
 
+// fetching data from backend
 
   const fetchDashboardData = async () => {
     try {
@@ -215,7 +216,6 @@ const StaffManagement = ({
   filteredStaff,
   searchTerm,
   setSearchTerm,
-  showAddStaff,
   setShowAddStaff,
 }) => (
   <div className="bg-white rounded-xl shadow-sm p-6">

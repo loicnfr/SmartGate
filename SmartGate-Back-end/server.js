@@ -317,6 +317,9 @@ app.get('/api/attendance/all', authenticateToken, async (req, res) => {
 });
 
 
+
+// face encoding from flask python
+
 app.post('/api/users/face-encoding', authenticateToken, upload.single('image'), async (req, res) => {
   try {
     const { image } = req.body;
