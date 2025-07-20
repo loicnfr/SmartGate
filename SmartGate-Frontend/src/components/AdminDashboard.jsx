@@ -395,6 +395,8 @@ const RecentActivityTable = ({ attendanceData, formatTime }) => (
   </div>
 );
 
+// model start
+
 const AddStaffModal = ({ onClose }) => {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
@@ -406,18 +408,15 @@ const AddStaffModal = ({ onClose }) => {
     position: "",
   });
 
-  // Updates form state on input change
   const handleChange = (e) => {
-    // Use 'name' attribute to map to form keys instead of placeholder
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  // Sends form data to backend
   const handleSubmit = async () => {
     setLoading(true);
     setMessage("");
     try {
-      const token = localStorage.getItem("token"); // Or pass as a prop
+      const token = localStorage.getItem("token");
 
       const res = await axios.post(
         "/api/users/staff",
@@ -432,7 +431,7 @@ const AddStaffModal = ({ onClose }) => {
 
       if (res.data.success) {
         setMessage("Staff added successfully!");
-        setCredentials(res.data.credentials); // Make sure backend returns credentials
+        setCredentials(res.data.credentials);
         setForm({ name: "", email: "", department: "", position: "" });
       } else {
         setMessage(res.data.message || "Failed to add staff.");
@@ -444,8 +443,8 @@ const AddStaffModal = ({ onClose }) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-xl p-6 w-96">
+    <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50">
+      <div className="bg-white/80 backdrop-blur-md rounded-xl p-6 w-96 shadow-xl">
         <h3 className="text-lg font-semibold mb-4">Add New Staff Member</h3>
 
         <div className="space-y-4">
@@ -487,7 +486,7 @@ const AddStaffModal = ({ onClose }) => {
         </div>
 
         {message && (
-          <p className={`mt-4 text-sm ${res?.data?.success ? "text-green-600" : "text-red-600"}`}>
+          <p className={`mt-4 text-sm ${message.includes("success") ? "text-green-600" : "text-red-600"}`}>
             {message}
           </p>
         )}
@@ -521,6 +520,9 @@ const AddStaffModal = ({ onClose }) => {
       </div>
     </div>
   );
-}
+};
+
+
+// end of model
 
 export default AdminDashboard;
