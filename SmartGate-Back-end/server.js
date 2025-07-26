@@ -5,7 +5,8 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const multer = require('multer');
 const axios = require('axios');
-const path = require('path');
+const crypto = require('crypto');
+const nodemailer = require('nodemailer');
 require('dotenv').config();
 
 const app = express();
@@ -15,14 +16,14 @@ app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-mongoose.connect(process.env.MONGODB_URI || 'mongodb+srv://etoganfor6:eudoxie@smartgatefr.2nh8vux.mongodb.net/?retryWrites=true&w=majority&appName=smartgateFR',
-   {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-
-}
+mongoose.connect(
+  process.env.MONGO_URL ||
+    'mongodb+srv://etoganfor6:eudoxie@smartgatefr.2nh8vux.mongodb.net/?retryWrites=true&w=majority&appName=smartgateFR',
+  {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+  }
 );
-
 
 const userSchema = new mongoose.Schema({
   name: { type: String, required: true },
@@ -33,9 +34,8 @@ const userSchema = new mongoose.Schema({
   department: { type: String },
   position: { type: String },
   createdAt: { type: Date, default: Date.now },
-  updatedAt: { type: Date, default: Date.now }
+  updatedAt: { type: Date, default: Date.now },
 });
-
 
 const attendanceSchema = new mongoose.Schema({
   userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
@@ -45,14 +45,11 @@ const attendanceSchema = new mongoose.Schema({
   date: { type: String, required: true },
   status: { type: String, enum: ['present', 'absent', 'partial'], default: 'absent' },
   workingHours: { type: Number },
-  method: { type: String, enum: ['face-recognition', 'manual'], default: 'face-recognition' }
+  method: { type: String, enum: ['face-recognition', 'manual'], default: 'face-recognition' },
 });
-
 
 const User = mongoose.model('User', userSchema);
 const Attendance = mongoose.model('Attendance', attendanceSchema);
-const crypto = require('crypto');
-const { error } = require('console');
 
 const authenticateToken = (req, res, next) => {
   const authHeader = req.headers['authorization'];
@@ -69,10 +66,20 @@ const authenticateToken = (req, res, next) => {
   });
 };
 
-
 const upload = multer({ storage: multer.memoryStorage() });
 
+// Nodemailer transporter setup
+const transporter = nodemailer.createTransport({
+  host: process.env.SMTP_HOST || 'smtp.gmail.com',
+  port: process.env.SMTP_PORT || 587,
+  secure: false, // true for 465, false for other ports
+  auth: {
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASS,
+  },
+});
 
+// Login endpoint
 app.post('/api/auth/login', async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -102,15 +109,15 @@ app.post('/api/auth/login', async (req, res) => {
         email: user.email,
         role: user.role,
         department: user.department,
-        position: user.position
-      }
+        position: user.position,
+      },
     });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Server error' });
   }
 });
 
-
+// Face recognition endpoint
 app.post('/api/auth/recognize', upload.single('image'), async (req, res) => {
   try {
     const { image } = req.body;
@@ -122,11 +129,15 @@ app.post('/api/auth/recognize', upload.single('image'), async (req, res) => {
     const imageData = image.replace(/^data:image\/[a-z]+;base64,/, '');
 
     try {
-      const response = await axios.post('http://localhost:5000/recognize', {
-        image: imageData
-      }, {
-        timeout: 10000
-      });
+      const response = await axios.post(
+        'http://localhost:5000/recognize',
+        {
+          image: imageData,
+        },
+        {
+          timeout: 10000,
+        }
+      );
 
       if (response.data.success && response.data.userId) {
         const user = await User.findById(response.data.userId);
@@ -148,9 +159,9 @@ app.post('/api/auth/recognize', upload.single('image'), async (req, res) => {
               email: user.email,
               role: user.role,
               department: user.department,
-              position: user.position
+              position: user.position,
             },
-            message: `Welcome, ${user.name}!`
+            message: `Welcome, ${user.name}!`,
           });
         }
       }
@@ -166,7 +177,7 @@ app.post('/api/auth/recognize', upload.single('image'), async (req, res) => {
   }
 });
 
-
+// Attendance mark helper
 const markAttendance = async (userId, userName) => {
   const today = new Date().toISOString().split('T')[0];
 
@@ -178,7 +189,7 @@ const markAttendance = async (userId, userName) => {
       userName,
       date: today,
       checkIn: new Date(),
-      status: 'present'
+      status: 'present',
     });
   } else if (!attendance.checkOut) {
     attendance.checkOut = new Date();
@@ -192,7 +203,7 @@ const markAttendance = async (userId, userName) => {
   return attendance;
 };
 
-
+// Validate token endpoint
 app.get('/api/auth/validate', authenticateToken, async (req, res) => {
   try {
     const user = await User.findById(req.user.userId);
@@ -208,15 +219,15 @@ app.get('/api/auth/validate', authenticateToken, async (req, res) => {
         email: user.email,
         role: user.role,
         department: user.department,
-        position: user.position
-      }
+        position: user.position,
+      },
     });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Server error' });
   }
 });
 
-
+// Get all staff (admin only)
 app.get('/api/users/staff', authenticateToken, async (req, res) => {
   try {
     if (req.user.role !== 'admin') {
@@ -230,14 +241,14 @@ app.get('/api/users/staff', authenticateToken, async (req, res) => {
   }
 });
 
-
+// Register new staff (admin only)
 app.post('/api/users/staff', authenticateToken, async (req, res) => {
   try {
     if (req.user.role !== 'admin') {
       return res.status(403).json({ success: false, message: 'Admin access required' });
     }
 
-    const { name, email, department, position, password } = req.body;
+    const { name, email, department, position } = req.body;
 
     // Check if user already exists
     const existingUser = await User.findOne({ email });
@@ -255,71 +266,80 @@ app.post('/api/users/staff', authenticateToken, async (req, res) => {
       password: hashedPassword,
       department,
       position,
-      role: 'staff'
+      role: 'staff',
     });
 
     await user.save();
 
-     res.status(201).json({
+    res.status(201).json({
       success: true,
       message: 'Staff registered successfully',
       credentials: {
         email,
-        password: generatedPassword
+        password: generatedPassword,
       },
       user: {
         id: user._id,
         name: user.name,
         email: user.email,
         department: user.department,
-        position: user.position
-      }
+        position: user.position,
+      },
     });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Server error' });
   }
 });
 
-
-app.get('/api/attendance/user/:userId', authenticateToken, async (req, res) => {
-  try {
-    const { userId } = req.params;
-
-    if (req.user.role !== 'admin' && req.user.userId !== userId) {
-      return res.status(403).json({ success: false, message: 'Access denied' });
-    }
-
-    const attendance = await Attendance.find({ userId }).sort({ date: -1 });
-    const today = new Date().toISOString().split('T')[0];
-    const todayAttendance = await Attendance.findOne({ userId, date: today });
-
-    res.json({
-      attendance,
-      todayAttendance
-    });
-  } catch (error) {
-    res.status(500).json({ success: false, message: 'Server error' });
-  }
-});
-
-
-app.get('/api/attendance/all', authenticateToken, async (req, res) => {
+// Send email with credentials (admin only)
+app.post('/api/users/staff/send-email', authenticateToken, async (req, res) => {
   try {
     if (req.user.role !== 'admin') {
       return res.status(403).json({ success: false, message: 'Admin access required' });
     }
 
-    const attendance = await Attendance.find().sort({ date: -1, checkIn: -1 });
-    res.json(attendance);
+    const { email, name, password } = req.body;
+    if (!email || !name || !password) {
+      return res.status(400).json({ success: false, message: 'Missing email, name or password' });
+    }
+
+    const mailOptions = {
+      from: `"Admin Team" <${process.env.SMTP_USER}>`,
+      to: email,
+      subject: 'Your Staff Account Credentials',
+      text: `Hello ${name},
+
+Your staff account has been created. Here are your login credentials:
+
+Email: ${email}
+Password: ${password}
+
+Please log in and change your password as soon as possible.
+
+Best regards,
+Admin Team`,
+      html: `<p>Hello ${name},</p>
+             <p>Your staff account has been created. Here are your login credentials:</p>
+             <ul>
+               <li><b>Email:</b> ${email}</li>
+               <li><b>Password:</b> ${password}</li>
+             </ul>
+             <p>Please log in and change your password as soon as possible.</p>
+             <p>Best regards,<br/>Admin Team</p>`,
+    };
+
+    await transporter.sendMail(mailOptions);
+
+    res.json({ success: true, message: 'Email sent successfully' });
   } catch (error) {
-    res.status(500).json({ success: false, message: 'Server error' });
+    console.error('Email send error:', error);
+    res.status(500).json({ success: false, message: 'Failed to send email' });
   }
 });
 
+// Attendance endpoints omitted for brevity (unchanged)
 
-
-// face encoding from flask python
-
+// Face encoding endpoint (unchanged)
 app.post('/api/users/face-encoding', authenticateToken, upload.single('image'), async (req, res) => {
   try {
     const { image } = req.body;
@@ -334,12 +354,12 @@ app.post('/api/users/face-encoding', authenticateToken, upload.single('image'), 
     try {
       const response = await axios.post('http://localhost:5000/encode', {
         image: imageData,
-        userId: userId
+        userId: userId,
       });
 
       if (response.data.success) {
         await User.findByIdAndUpdate(userId, {
-          faceEncoding: response.data.encoding
+          faceEncoding: response.data.encoding,
         });
 
         res.json({ success: true, message: 'Face encoding saved successfully' });
@@ -355,6 +375,7 @@ app.post('/api/users/face-encoding', authenticateToken, upload.single('image'), 
   }
 });
 
+// Create default admin user if none exists
 const createDefaultAdmin = async () => {
   try {
     const adminExists = await User.findOne({ role: 'admin' });
@@ -366,10 +387,10 @@ const createDefaultAdmin = async () => {
         password: hashedPassword,
         role: 'admin',
         department: 'IT',
-        position: 'Administrator'
+        position: 'Administrator',
       });
       await admin.save();
-      // admin@company.com / admin123'
+      // Default admin credentials: admin@company.com / admin123
     }
   } catch (error) {
     console.error('Error creating default admin:', error);

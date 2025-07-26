@@ -14,7 +14,7 @@ import pickle
 app = Flask(__name__)
 CORS(app)
 
-MONGODB_URI = os.getenv('MONGODB_URI', 'mongodb+srv://etoganfor6:eudoxie@smartgatefr.2nh8vux.mongodb.net/?retryWrites=true&w=majority&appName=smartgateFR')
+MONGODB_URI = os.getenv('MONGO_URL', 'mongodb://localhost:27017/SmartGate')
 client = pymongo.MongoClient(MONGODB_URI)
 db = client.facial_attendance
 
