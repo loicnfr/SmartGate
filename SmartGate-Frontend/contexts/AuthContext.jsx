@@ -5,7 +5,7 @@ import { useLocalStorage } from "../src/hooks/useLocalStorage";
 const AuthContext = createContext();
 
 const API_BASE_URL = "http://localhost:3001/api"; // Node.js backend
-const FLASK_API_URL = "http://localhost:5000";    // Flask face backend
+const FLASK_API_URL = "http://localhost:5000"; // Flask face backend
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useLocalStorage("user", null);
@@ -61,7 +61,10 @@ export const AuthProvider = ({ children }) => {
   const registerUserWithFace = async (formData, imageData) => {
     try {
       // 1. Create user in Node.js backend
-      const userRes = await axios.post(`${API_BASE_URL}/auth/register`, formData);
+      const userRes = await axios.post(
+        `${API_BASE_URL}/auth/register`,
+        formData
+      );
 
       if (!userRes.data.success || !userRes.data.user) {
         throw new Error("User registration failed");
@@ -97,7 +100,9 @@ export const AuthProvider = ({ children }) => {
       });
 
       if (flaskRes.data.success && flaskRes.data.userId) {
-        const userRes = await axios.get(`${API_BASE_URL}/users/${flaskRes.data.userId}`);
+        const userRes = await axios.get(
+          `${API_BASE_URL}/users/${flaskRes.data.userId}`
+        );
 
         const user = userRes.data;
         const token = flaskRes.data.token;

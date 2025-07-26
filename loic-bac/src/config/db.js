@@ -1,16 +1,15 @@
 import mongoose from "mongoose";
-import dotenv from "dotenv"
-import seedAdmin from "../seed/adminSeeder.js"
-dotenv.config()
+import dotenv from "dotenv";
+import seedAdmin from "../seed/adminSeeder.js";
+dotenv.config();
 
-export const dbConnection = async() => {
-    try {
-        await mongoose.connect(process.env.MONGO_URL)
-        console.log("MongoDB successfully connected!");
-        seedAdmin()
-        
-    } catch (error) {
-        console.log(`failed to connect to mongodb ${error}`);
-        process.exit(1)
-    }
-}
+export const dbConnection = async () => {
+  try {
+    await mongoose.connect(process.env.MONGO_URL);
+    console.log("MongoDB successfully connected!");
+    seedAdmin();
+  } catch (error) {
+    console.log(`failed to connect to mongodb ${error}`);
+    process.exit(1);
+  }
+};
