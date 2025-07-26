@@ -247,7 +247,6 @@ const StaffManagement = ({
         >
           <div>
             <h4 className="font-medium text-gray-900">{member.name}</h4>
-            <p className="text-sm text-gray-600">{member.email}</p>
             <p className="text-xs text-gray-500">{member.department}</p>
           </div>
           <div className="flex space-x-2">
@@ -403,7 +402,6 @@ const AddStaffModal = ({ onClose }) => {
   const [credentials, setCredentials] = useState(null);
   const [form, setForm] = useState({
     name: "",
-    email: "",
     department: "",
     position: "",
   });
@@ -456,16 +454,6 @@ const AddStaffModal = ({ onClose }) => {
             onChange={handleChange}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
-
-          <input
-            type="email"
-            name="email"
-            placeholder="Email Address"
-            value={form.email}
-            onChange={handleChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-
           <input
             type="text"
             name="department"

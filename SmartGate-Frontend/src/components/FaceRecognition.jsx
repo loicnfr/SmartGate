@@ -1,45 +1,78 @@
-import React, { useRef, useState, useCallback } from 'react';
-import Webcam from 'react-webcam';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../../contexts/AuthContext';
-import { Camera, UserCheck, Loader2, Users, Settings } from 'lucide-react';
+import React, { useRef, useState, useCallback } from "react";
+import Webcam from "react-webcam";
+import { useNavigate } from "react-router-dom";
+import { Camera, UserCheck, Loader2, Users, Settings } from "lucide-react";
 
 const FaceRecognition = () => {
   const webcamRef = useRef(null);
   const [isCapturing, setIsCapturing] = useState(false);
-  const [message, setMessage] = useState('');
+  const [message, setMessage] = useState("");
   const [showWebcam, setShowWebcam] = useState(false);
-  const { recognizeUser } = useAuth();
   const navigate = useNavigate();
+
+  // Function to call backend API to recognize user from base64 image
+  async function recognizeUser(imageBase64) {
+    try {
+      const response = await fetch("http://localhost:5000/recognize", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ image: imageBase64 }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        // Here you could fetch more user info by data.userId if needed
+        return {
+          id: data.userId,
+          name: `User ${data.userId}`,
+          confidence: data.confidence,
+        };
+      } else {
+        return null;
+      }
+    } catch (error) {
+      console.error("Recognition API error:", error);
+      return null;
+    }
+  }
 
   const capture = useCallback(async () => {
     if (!webcamRef.current) return;
 
     setIsCapturing(true);
-    setMessage('Analyzing face...');
+    setMessage("Analyzing face...");
 
     try {
       const imageSrc = webcamRef.current.getScreenshot();
-      if (imageSrc) {
-        const user = await recognizeUser(imageSrc);
+      if (!imageSrc) {
+        setMessage("Failed to capture image. Please try again.");
+        setIsCapturing(false);
+        return;
+      }
 
-        if (user) {
-          setMessage(`Welcome, ${user.name}!`);
-          setTimeout(() => {
-            navigate('/dashboard');
-          }, 1500);
-        } else {
-          setMessage('Face not recognized. Please try again or use manual login.');
-          setTimeout(() => setMessage(''), 3000);
-        }
+      const user = await recognizeUser(imageSrc);
+
+      if (user) {
+        setMessage(`Welcome, ${user.name}!`);
+        setTimeout(() => {
+          navigate("/dashboard");
+        }, 1500);
+      } else {
+        setMessage(
+          "Face not recognized. Please try again or use manual login."
+        );
+        setTimeout(() => setMessage(""), 3000);
       }
     } catch (error) {
-      setMessage('Recognition failed. Please try again.');
-      setTimeout(() => setMessage(''), 3000);
+      setMessage("Recognition failed. Please try again.");
+      setTimeout(() => setMessage(""), 3000);
     } finally {
       setIsCapturing(false);
     }
-  }, [recognizeUser, navigate]);
+  }, [navigate]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-900 via-blue-800 to-indigo-900 flex items-center justify-center p-4">
@@ -48,7 +81,9 @@ const FaceRecognition = () => {
           <div className="mx-auto w-16 h-16 bg-white rounded-full flex items-center justify-center mb-4">
             <UserCheck className="w-8 h-8 text-blue-600" />
           </div>
-          <h1 className="text-3xl font-bold text-white mb-2">Attendance System</h1>
+          <h1 className="text-3xl font-bold text-white mb-2">
+            Attendance System
+          </h1>
           <p className="text-blue-200">Secure facial recognition check-in</p>
         </div>
 
@@ -58,8 +93,13 @@ const FaceRecognition = () => {
               <div className="w-24 h-24 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6">
                 <Camera className="w-12 h-12 text-blue-600" />
               </div>
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">Ready to check in?</h2>
-              <p className="text-gray-600 mb-6">Position your face in front of the camera for automatic recognition</p>
+              <h2 className="text-xl font-semibold text-gray-900 mb-4">
+                Ready to check in?
+              </h2>
+              <p className="text-gray-600 mb-6">
+                Position your face in front of the camera for automatic
+                recognition
+              </p>
 
               <button
                 onClick={() => setShowWebcam(true)}
@@ -70,14 +110,14 @@ const FaceRecognition = () => {
 
               <div className="flex space-x-2">
                 <button
-                  onClick={() => navigate('/login')}
+                  onClick={() => navigate("/login")}
                   className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-2 px-4 rounded-xl transition-colors duration-200 flex items-center justify-center"
                 >
                   <Users className="w-4 h-4 mr-2" />
                   Manual Login
                 </button>
                 <button
-                  onClick={() => navigate('/admin')}
+                  onClick={() => navigate("/admin")}
                   className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-2 px-4 rounded-xl transition-colors duration-200 flex items-center justify-center"
                 >
                   <Settings className="w-4 h-4 mr-2" />
@@ -87,7 +127,9 @@ const FaceRecognition = () => {
             </div>
           ) : (
             <div className="text-center">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">Position your face</h2>
+              <h2 className="text-xl font-semibold text-gray-900 mb-4">
+                Position your face
+              </h2>
 
               <div className="relative rounded-xl overflow-hidden mb-6">
                 <Webcam
@@ -98,7 +140,7 @@ const FaceRecognition = () => {
                   videoConstraints={{
                     width: 300,
                     height: 300,
-                    facingMode: "user"
+                    facingMode: "user",
                   }}
                 />
                 <div className="absolute inset-0 border-4 border-blue-400 rounded-xl pointer-events-none">
@@ -110,13 +152,16 @@ const FaceRecognition = () => {
               </div>
 
               {message && (
-                <div className={`p-3 rounded-lg mb-4 ${
-                  message.includes('Welcome')
-                    ? 'bg-green-100 text-green-800'
-                    : message.includes('failed') || message.includes('not recognized')
-                    ? 'bg-red-100 text-red-800'
-                    : 'bg-blue-100 text-blue-800'
-                }`}>
+                <div
+                  className={`p-3 rounded-lg mb-4 ${
+                    message.includes("Welcome")
+                      ? "bg-green-100 text-green-800"
+                      : message.includes("failed") ||
+                        message.includes("not recognized")
+                      ? "bg-red-100 text-red-800"
+                      : "bg-blue-100 text-blue-800"
+                  }`}
+                >
                   {message}
                 </div>
               )}
@@ -152,9 +197,7 @@ const FaceRecognition = () => {
         </div>
 
         <div className="text-center mt-6">
-          <p className="text-blue-200 text-sm">
-            Secure • Fast • Contactless
-          </p>
+          <p className="text-blue-200 text-sm">Secure • Fast • Contactless</p>
         </div>
       </div>
     </div>
