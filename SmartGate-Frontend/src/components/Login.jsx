@@ -3,21 +3,22 @@ import { Link } from "react-router-dom";
 // import { useAuth } from '../../contexts/AuthContext';
 import { Mail, Lock, ArrowLeft, Loader2 } from "lucide-react";
 import { useAuth } from "../../contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
 // import axios from 'axios';
 
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState("");
 
-  const { login } = useAuth();
+  const [error, setError] = useState("");
+  const navigate = useNavigate();
+  const { login, loading } = useAuth();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setIsLoading(true);
+
     setError("");
-    await login(email, password);
+    await login(email, password).then(() => navigate("/dashboard"));
   };
 
   return (
@@ -92,10 +93,10 @@ const Login = () => {
 
             <button
               type="submit"
-              disabled={isLoading}
+              disabled={loading}
               className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-medium py-3 px-4 rounded-xl transition-colors duration-200 flex items-center justify-center"
             >
-              {isLoading ? (
+              {loading ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                   Signing in...

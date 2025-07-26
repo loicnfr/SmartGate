@@ -13,8 +13,7 @@ app.get("/", (req, res) => {
   res.send("Hello World!");
 });
 
-app.post("/add", router);
-app.post("/admin", router);
+app.use("/api", router);
 
 app.listen(port, () => {
   console.log(`The server is running on port http://localhost:${port}`);

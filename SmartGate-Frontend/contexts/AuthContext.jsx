@@ -1,11 +1,13 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import axios from "axios";
 import { useLocalStorage } from "../src/hooks/useLocalStorage";
+import { toast } from "react-toastify";
+import { useNavigate } from "react-router-dom";
 
 const AuthContext = createContext();
 
-const API_BASE_URL = "http://localhost:3001/api"; // Your Node.js backend
-const FLASK_API_URL = "http://localhost:5000";    // Your Flask face recognition backend
+const API_BASE_URL = "http://localhost:8001/api"; // Your Node.js backend
+const FLASK_API_URL = "http://localhost:5000"; // Your Flask face recognition backend
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useLocalStorage("user", null);
@@ -36,20 +38,26 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     try {
+      setLoading(true);
       const response = await axios.post(`${API_BASE_URL}/auth/login`, {
         email,
         password,
       });
-
+      console.log("Login response:", response.data);
       if (response.data.success) {
         localStorage.setItem("token", response.data.token);
         setUser(response.data.user);
+
         return true;
       }
+
       return false;
     } catch (error) {
       console.error("Login error:", error);
+      toast.error(error.response?.data?.message || "Login failed");
       return false;
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -62,7 +70,10 @@ export const AuthProvider = ({ children }) => {
   const registerUserWithFace = async (formData, imageData) => {
     try {
       // 1. Register user in Node.js backend
-      const userRes = await axios.post(`${API_BASE_URL}/auth/register`, formData);
+      const userRes = await axios.post(
+        `${API_BASE_URL}/auth/register`,
+        formData
+      );
 
       if (!userRes.data.success || !userRes.data.user) {
         throw new Error("User registration failed");
@@ -101,7 +112,9 @@ export const AuthProvider = ({ children }) => {
 
       if (flaskRes.data.success && flaskRes.data.userId) {
         // Fetch user details from Node.js backend
-        const userRes = await axios.get(`${API_BASE_URL}/users/${flaskRes.data.userId}`);
+        const userRes = await axios.get(
+          `${API_BASE_URL}/users/${flaskRes.data.userId}`
+        );
 
         const user = userRes.data;
         // Optionally get token from Flask backend or generate one here if applicable

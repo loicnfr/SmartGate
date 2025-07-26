@@ -1,9 +1,15 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider, useAuth } from '../contexts/AuthContext';
-import Login from '../src/components/Login';
-import StaffDashboard from '../src/components/StaffDashboard';
-import AdminDashboard from '../src/components/AdminDashboard';
-import FaceRecognition from '../src/components/FaceRecognition';
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+} from "react-router-dom";
+import { AuthProvider, useAuth } from "../contexts/AuthContext";
+import Login from "../src/components/Login";
+import StaffDashboard from "../src/components/StaffDashboard";
+import AdminDashboard from "../src/components/AdminDashboard";
+import FaceRecognition from "../src/components/FaceRecognition";
+import { ToastContainer } from "react-toastify";
 
 function ProtectedRoute({ children, adminOnly }) {
   const { user, loading } = useAuth();
@@ -20,7 +26,7 @@ function ProtectedRoute({ children, adminOnly }) {
     return <Navigate to="/login" replace />;
   }
 
-  if (adminOnly && user.role !== 'admin') {
+  if (adminOnly && user.role !== "admin") {
     return <Navigate to="/dashboard" replace />;
   }
 
@@ -41,7 +47,7 @@ function AppRoutes() {
         path="/dashboard"
         element={
           <ProtectedRoute>
-            {user?.role === 'admin' ? <AdminDashboard /> : <StaffDashboard />}
+            {user?.role === "admin" ? <AdminDashboard /> : <StaffDashboard />}
           </ProtectedRoute>
         }
       />
@@ -61,6 +67,7 @@ function AppRoutes() {
 function App() {
   return (
     <AuthProvider>
+      <ToastContainer />
       <Router>
         <div className="min-h-screen bg-gray-50">
           <AppRoutes />

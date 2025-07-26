@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const baseURL = "http://localhost:8001";
+export const baseURL = "http://localhost:8001";
 
 export const useApiClient = (token) => {
   const api = axios.create({

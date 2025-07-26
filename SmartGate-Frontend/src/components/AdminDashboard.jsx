@@ -13,11 +13,12 @@ import {
   Filter,
 } from "lucide-react";
 import axios from "axios";
+import { baseURL } from "../services/api";
 
 const AdminDashboard = () => {
   const { user, logout } = useAuth();
   // const [staff, setStaff] = useState([]);
-  const [staff, setStaff] = useState({name: '', email: ''});
+  const [staff, setStaff] = useState({ name: "", email: "" });
   const [attendanceData, setAttendanceData] = useState([]);
   const [loading, setLoading] = useState(true);
   // const [credentials, setCredentials] = useState(null);
@@ -27,30 +28,29 @@ const AdminDashboard = () => {
   );
   const [showAddStaff, setShowAddStaff] = useState(false);
 
-
-
   useEffect(() => {
     fetchDashboardData();
   }, []);
 
-
-
-
-// fetching data from backend
+  // fetching data from backend
 
   const fetchDashboardData = async () => {
     try {
-      const [staffResponse, attendanceResponse] = await Promise.all([
-        axios.get("/api/users/staff", {
+      const [staffResponse] = await Promise.all([
+        axios.get(`${baseURL}/api/users/staff`, {
           headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
         }),
-        axios.get("/api/attendance/all", {
-          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-        }),
+        // axios.get(`${baseURL}/api/attendance/all`, {
+        //   headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+        // }),
       ]);
 
+      console.log("staff response: ", staffResponse);
+
       setStaff(Array.isArray(staffResponse.data) ? staffResponse.data : []);
-      setAttendanceData(Array.isArray(attendanceResponse.data) ? attendanceResponse.data : []);
+      // setAttendanceData(
+      //   Array.isArray(attendanceResponse.data) ? attendanceResponse.data : []
+      // );
     } catch (error) {
       console.error("Error fetching dashboard data:", error);
       setStaff([]);
@@ -111,8 +111,6 @@ const AdminDashboard = () => {
       </div>
     );
   }
-
-
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -192,9 +190,11 @@ const AdminDashboard = () => {
         />
 
         {showAddStaff && (
-          <AddStaffModal onClose={() => setShowAddStaff(false)} />
+          <AddStaffModal
+            onClose={() => setShowAddStaff(false)}
+            fetchDashboardData={() => fetchDashboardData()}
+          />
         )}
-
       </div>
     </div>
   );
@@ -272,7 +272,9 @@ const AttendanceReport = ({
 }) => (
   <div className="bg-white rounded-xl shadow-sm p-6">
     <div className="flex justify-between items-center mb-4">
-      <h3 className="text-lg font-semibold text-gray-900">Attendance Reports</h3>
+      <h3 className="text-lg font-semibold text-gray-900">
+        Attendance Reports
+      </h3>
       <button
         onClick={exportAttendance}
         className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center"
@@ -396,7 +398,7 @@ const RecentActivityTable = ({ attendanceData, formatTime }) => (
 
 // model start
 
-const AddStaffModal = ({ onClose }) => {
+const AddStaffModal = ({ onClose, fetchDashboardData }) => {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [credentials, setCredentials] = useState(null);
@@ -404,6 +406,7 @@ const AddStaffModal = ({ onClose }) => {
     name: "",
     department: "",
     position: "",
+    email: "",
   });
 
   const handleChange = (e) => {
@@ -416,21 +419,19 @@ const AddStaffModal = ({ onClose }) => {
     try {
       const token = localStorage.getItem("token");
 
-      const res = await axios.post(
-        "/api/users/staff",
-        form,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
+      const res = await axios.post(`${baseURL}/api/users/staff`, form, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
 
       if (res.data.success) {
         setMessage("Staff added successfully!");
         setCredentials(res.data.credentials);
         setForm({ name: "", email: "", department: "", position: "" });
+        onClose();
+        fetchDashboardData();
       } else {
         setMessage(res.data.message || "Failed to add staff.");
       }
@@ -464,6 +465,15 @@ const AddStaffModal = ({ onClose }) => {
           />
 
           <input
+            type="email"
+            name="email"
+            placeholder="email"
+            value={form.email}
+            onChange={handleChange}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+
+          <input
             type="text"
             name="position"
             placeholder="Position"
@@ -474,7 +484,11 @@ const AddStaffModal = ({ onClose }) => {
         </div>
 
         {message && (
-          <p className={`mt-4 text-sm ${message.includes("success") ? "text-green-600" : "text-red-600"}`}>
+          <p
+            className={`mt-4 text-sm ${
+              message.includes("success") ? "text-green-600" : "text-red-600"
+            }`}
+          >
             {message}
           </p>
         )}
@@ -482,7 +496,9 @@ const AddStaffModal = ({ onClose }) => {
         {credentials && (
           <div className="mt-4 p-2 bg-gray-100 rounded">
             <strong>Assigned Credentials:</strong>
-            <pre className="text-sm">{JSON.stringify(credentials, null, 2)}</pre>
+            <pre className="text-sm">
+              {JSON.stringify(credentials, null, 2)}
+            </pre>
           </div>
         )}
 
@@ -509,7 +525,6 @@ const AddStaffModal = ({ onClose }) => {
     </div>
   );
 };
-
 
 // end of model
 

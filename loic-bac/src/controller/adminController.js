@@ -8,12 +8,16 @@ export const loginAdmin = async (req, res) => {
   try {
     const admin = await Admin.findOne({ email });
     if (!admin) {
-      return res.status(404).json({ message: "Admin not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Admin not found" });
     }
 
     const isMatch = await bcrypt.compare(password, admin.password);
     if (!isMatch) {
-      return res.status(401).json({ message: "Invalid password" });
+      return res
+        .status(401)
+        .json({ success: false, message: "Invalid password" });
     }
 
     const token = jwt.sign(
@@ -23,6 +27,7 @@ export const loginAdmin = async (req, res) => {
     );
 
     res.status(200).json({
+      success: true,
       message: "Login successful",
       token,
       admin: {
