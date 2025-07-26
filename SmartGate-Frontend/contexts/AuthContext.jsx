@@ -4,8 +4,8 @@ import { useLocalStorage } from "../src/hooks/useLocalStorage";
 
 const AuthContext = createContext();
 
-const API_BASE_URL = "http://localhost:3001/api"; // Node.js backend
-const FLASK_API_URL = "http://localhost:5000";    // Flask face backend
+const API_BASE_URL = "http://localhost:3001/api"; // Your Node.js backend
+const FLASK_API_URL = "http://localhost:5000";    // Your Flask face recognition backend
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useLocalStorage("user", null);
@@ -28,6 +28,7 @@ export const AuthProvider = ({ children }) => {
       setUser(response.data.user);
     } catch (error) {
       localStorage.removeItem("token");
+      setUser(null);
     } finally {
       setLoading(false);
     }
@@ -57,10 +58,10 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
   };
 
-  // ✅ Register user and encode face
+  // Register user and encode face
   const registerUserWithFace = async (formData, imageData) => {
     try {
-      // 1. Create user in Node.js backend
+      // 1. Register user in Node.js backend
       const userRes = await axios.post(`${API_BASE_URL}/auth/register`, formData);
 
       if (!userRes.data.success || !userRes.data.user) {
@@ -69,8 +70,10 @@ export const AuthProvider = ({ children }) => {
 
       const userId = userRes.data.user._id;
 
-      // 2. Send face to Flask encode API
-      const base64Image = imageData.split(",")[1]; // Remove "data:image/jpeg;base64," part
+      // 2. Send face image to Flask backend for encoding
+      // imageData is expected as full base64 string: "data:image/jpeg;base64,...."
+      const base64Image = imageData.split(",")[1]; // Remove prefix
+
       const flaskRes = await axios.post(`${FLASK_API_URL}/encode`, {
         image: base64Image,
         userId,
@@ -87,24 +90,22 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // ✅ Login using face recognition
+  // Login using face recognition
   const recognizeUser = async (imageData) => {
     try {
-      const base64Image = imageData.split(",")[1];
+      const base64Image = imageData.split(",")[1]; // Remove prefix
 
       const flaskRes = await axios.post(`${FLASK_API_URL}/recognize`, {
         image: base64Image,
       });
 
       if (flaskRes.data.success && flaskRes.data.userId) {
+        // Fetch user details from Node.js backend
         const userRes = await axios.get(`${API_BASE_URL}/users/${flaskRes.data.userId}`);
 
         const user = userRes.data;
-        const token = flaskRes.data.token;
-
-        if (token) {
-          localStorage.setItem("token", token);
-        }
+        // Optionally get token from Flask backend or generate one here if applicable
+        // For now, we assume token is handled elsewhere or omitted in face login
 
         setUser(user);
         return user;
@@ -122,8 +123,8 @@ export const AuthProvider = ({ children }) => {
     login,
     logout,
     loading,
+    registerUserWithFace,
     recognizeUser,
-    registerUserWithFace, // <- include this in context
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
