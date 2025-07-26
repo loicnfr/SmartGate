@@ -176,6 +176,25 @@ def load_encodings_from_db():
     except Exception as e:
         return jsonify({'success': False, 'message': f'Failed to load encodings: {str(e)}'}), 500
 
+@app.route('/test_encode', methods=['POST'])
+def test_encode_sample_user():
+    try:
+        data = request.get_json()
+        name = data.get("name", "test_user")
+
+        # Create a test user in MongoDB
+        new_user = db.users.insert_one({"name": name})
+        user_id = str(new_user.inserted_id)
+
+        return jsonify({
+            "success": True,
+            "userId": user_id,
+            "message": f"Test user '{name}' created. Use this userId in /encode with a base64 face image."
+        })
+    except Exception as e:
+        return jsonify({"success": False, "message": f"Failed to create test user: {e}"})
+
+
 
 if __name__ == '__main__':
     print("Starting Facial Recognition Service...")
