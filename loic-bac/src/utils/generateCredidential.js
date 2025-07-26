@@ -15,4 +15,3 @@ const generatePassword = (length = 10) => {
   };
   
   export { generatePassword, generateEmail };
-  
